@@ -43,12 +43,14 @@ class App():
 
         bt_find_video = Button(self.window, text='find', command=self.cb_find_video)
         bt_find_video.grid(row=0, column=2)
-
-
-
+        bt_select = Button(self.window, text='select', command=self.cb_find_video)
+        bt_select.grid(row=1, column=2)
 
     def start(self):
         self.window.mainloop()
+
+    def cb_select_from_table(self):
+        self.tree
 
     def cb_find_video(self):
         url = self.sv_url_text.get()
