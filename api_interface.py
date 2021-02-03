@@ -13,21 +13,29 @@ youtube = build('youtube', 'v3', developerKey=api_key)
 def get_video_by_url(url):
     id = url.split('=')
     print(id)
+    request = None
+    details = None
     try:
-        request = youtube.videos().list(
+        req_snipp = youtube.videos().list(
             part="snippet",
-            id=id[1]
+            id=id[1].strip('&t')
         )
+        snippet = req_snipp.execute()
+
+        req_detail = youtube.videos().list(
+            part="contentDetails",
+            id=id[1].strip('&t')
+        )
+        details = req_detail.execute()
     except IndexError as e:
         print('Index out of bounds')
         print(e)
-
-    try:
-        return request.execute()
+        pass
     except HTTPError as e:
+        print('HTTPERROR')
         print(e)
-        exit(1)
-        return None
+        pass
+    return snippet, details
 
 
 def get_transcript_by_id(id):
