@@ -91,6 +91,14 @@ class App:
             if tag == 'checked':
                 checked.append(child)
         print(checked)
+        self.txt_tscript.delete('1.0', END)
+        subjects = []
+        for id in checked:
+            values = self.tree.item(id, 'values')
+            subjects.append(values)
+            self.txt_tscript.insert(END, f"{values[0]} : {values[1]} : {values[2]}\n")
+        self.txt_tscript.insert(END, '-----')
+        self._generate_links(subjects)
 
     def populate_grid(self, entries):
         count = 0
@@ -101,6 +109,8 @@ class App:
 
     def toggle_checked(self, event):
         rowid = self.tree.identify_row(event.y)
+        if not rowid:
+            return
         tag = self.tree.item(rowid, 'tags')[0]
         tags = list(self.tree.item(rowid, 'tags'))
         tags.remove(tag)
@@ -110,3 +120,5 @@ class App:
         else:
             self.tree.item(rowid, tags="checked")
 
+    def _generate_links(self, elemnts):
+        return None
