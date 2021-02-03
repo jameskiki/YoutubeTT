@@ -13,10 +13,15 @@ youtube = build('youtube', 'v3', developerKey=api_key)
 def get_video_by_url(url):
     id = url.split('=')
     print(id)
-    request = youtube.videos().list(
-        part="snippet",
-        id=id[1]
-    )
+    try:
+        request = youtube.videos().list(
+            part="snippet",
+            id=id[1]
+        )
+    except IndexError as e:
+        print('Index out of bounds')
+        print(e)
+
     try:
         return request.execute()
     except HTTPError as e:

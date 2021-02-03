@@ -3,4 +3,7 @@ api_key.py
 .idea
 __pycache__
 venv
+dist
+build
+*.spec
 
