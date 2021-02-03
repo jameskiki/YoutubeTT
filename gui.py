@@ -2,7 +2,7 @@ from tkinter import Tk, Label, Entry, Text, Button, StringVar, END
 
 import api_interface
 
-class app():
+class App():
     def __init__(self):
         self.window = Tk()
 

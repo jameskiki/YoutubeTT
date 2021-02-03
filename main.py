@@ -1,11 +1,8 @@
-import os
-import re
-from datetime import timedelta
 
-from gui import app
+from gui import App
 
 
-appl = app()
+appl = App()
 appl.start()
 
 
