@@ -1,6 +1,8 @@
-from tkinter import Tk, ttk, Label, Entry, Text, Button, StringVar, END, YES, W
+from tkinter import Tk, ttk, Frame, Label, Entry, Text, Button, StringVar, END, YES, W, SUNKEN
 from ttkwidgets import CheckboxTreeview
 from PIL import Image, ImageTk
+from math import floor
+import webbrowser
 
 import api_interface
 
@@ -9,12 +11,11 @@ class App:
 
     def __init__(self):
         self.window = Tk()
-
         self.im_checked = ImageTk.PhotoImage(Image.open('resources/im_checked.png'))
         self.im_unchecked = ImageTk.PhotoImage(Image.open('resources/im_unchecked.png'))
 
         self.sv_url_text = StringVar(self.window)
-        self.sv_url_text.set('https://www.youtube.com/watch?v=67hNu3A4tts&t=554s')
+        self.sv_url_text.set('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
         self.sv_title_text = StringVar(self.window)
         self.sv_video_id = StringVar(self.window)
         self.sv_video_len = StringVar(self.window)
@@ -33,10 +34,12 @@ class App:
         en_len.grid(row=1, column=4)
 
         self.txt_tscript = Text(self.window, width=60, height=10)
-        self.txt_tscript.grid(row=3, column=1, columnspan=5)
+        self.txt_tscript.grid(row=4, column=1, columnspan=5, pady=15)
 
-        self.tree = ttk.Treeview(self.window)
-        self.tree.grid(row=2, column=1, columnspan=5)
+        subframe = Frame(self.window)
+        subframe.grid(row=3, column=1, columnspan=5, pady=15)
+        self.tree = ttk.Treeview(subframe, height=15)
+        self.tree.pack(side='left')
         self.tree["columns"] = ("time", "text", "duration")
         self.tree.column("#0", stretch=YES, width=45)
         self.tree.column("time", stretch=YES, width=100)
@@ -50,38 +53,41 @@ class App:
         self.tree.tag_configure("checked", image=self.im_checked)
         self.tree.bind('<Button 1>', self.toggle_checked)
 
+        vsb = ttk.Scrollbar(subframe, orient="vertical", command=self.tree.yview)
+        vsb.pack(side='left', fill="y")
+        self.tree.configure(yscrollcommand=vsb.set)
+
         bt_find_video = Button(self.window, text='find', command=self.cb_find_video)
         bt_find_video.grid(row=0, column=5)
         bt_select_vid = Button(self.window, text='generate links', command=self.cb_select_video)
         bt_select_vid.grid(row=1, column=5)
+        bt_goto_vid = Button(self.window, text='take me to video', command=self.cb_to_vid)
+        bt_goto_vid.grid(row=2, column=5)
 
     def start(self):
         self.window.mainloop()
 
-    def cb_select_from_table(self):
-        self.tree
-
     def cb_find_video(self):
         url = self.sv_url_text.get()
-        (response, details) = api_interface.get_video_by_url(url)
+        (vid_id, response, details) = api_interface.get_video_by_url(url)
         print(response)
         print(details)
 
-        id = response['items'][0]['id']
-        self.sv_video_id.set(id)
+        self.sv_video_id.set(vid_id)
         title = response['items'][0]['snippet']['title']
         self.sv_title_text.set(title)
         duration = details['items'][0]['contentDetails']['duration']
         self.sv_video_len.set(duration)
 
-        tscripts = api_interface.get_transcript_by_id(id)
+        tscripts = api_interface.get_transcript_by_id(vid_id)
         print(tscripts)
 
         self.txt_tscript.delete('1.0', END)
-        for elem in tscripts:
-            self.txt_tscript.insert(END, f"{elem['start']} : {elem['text']} : {elem['duration']}\n")
-
-        self.populate_grid(tscripts)
+        if tscripts is not None:
+            for elem in tscripts:
+                self.txt_tscript.insert(END, f"{elem['start']} : {elem['text']} : {elem['duration']}\n")
+            self.populate_grid(tscripts)
+        self.txt_tscript.insert(END, 'cc disabled, no transcript retrievable!!')
 
     def cb_select_video(self):
         checked = []
@@ -97,8 +103,13 @@ class App:
             values = self.tree.item(id, 'values')
             subjects.append(values)
             self.txt_tscript.insert(END, f"{values[0]} : {values[1]} : {values[2]}\n")
-        self.txt_tscript.insert(END, '-----')
-        self._generate_links(subjects)
+        self.txt_tscript.insert(END, '-----\n')
+        links = self._generate_links(self.sv_video_id.get(), subjects)
+        for link in links:
+            self.txt_tscript.insert(END, f"{link}\n")
+
+    def cb_to_vid(self):
+        webbrowser.open(self.sv_url_text.get(), new=2)
 
     def populate_grid(self, entries):
         count = 0
@@ -106,6 +117,7 @@ class App:
         for item in entries:
             self.tree.insert("", index="end", values=(item['start'], item['text'], item['duration']), tag='unchecked')
             count += 1
+        self.tree.Scrollable = True
 
     def toggle_checked(self, event):
         rowid = self.tree.identify_row(event.y)
@@ -120,5 +132,10 @@ class App:
         else:
             self.tree.item(rowid, tags="checked")
 
-    def _generate_links(self, elemnts):
-        return None
+    def _generate_links(self,vid_id, elements):
+        print(elements)
+        links = []
+        for elem in elements:
+            t_stamp = float(elem[0])
+            links.append(f'https://youtu.be/{vid_id}?t={floor(t_stamp)}')
+        return links
